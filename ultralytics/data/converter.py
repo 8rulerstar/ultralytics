@@ -663,8 +663,12 @@ def yolo_bbox2segment(
     save_dir.mkdir(parents=True, exist_ok=True)
     for label in dataset.labels:
         texts = []
-        lb_name = Path(label["im_file"]).with_suffix(".txt").name
-        txt_file = save_dir / lb_name
+        im_file = Path(label["im_file"])
+        try:
+            txt_file = save_dir / im_file.relative_to(im_dir).with_suffix(".txt")  # keep subfolders, like convert_coco
+        except (ValueError, TypeError):  # im_dir is an image list file or a list of paths
+            txt_file = save_dir / im_file.with_suffix(".txt").name
+        txt_file.parent.mkdir(parents=True, exist_ok=True)
         cls = label["cls"]
         for i, s in enumerate(label["segments"]):
             if len(s) < 3:  # fewer than 3 points is not a polygon, and writes a row no loader accepts

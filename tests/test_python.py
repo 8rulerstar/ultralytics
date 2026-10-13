@@ -1362,6 +1362,19 @@ def test_data_converter(tmp_path):
     coco80_to_coco91_class()
 
 
+def test_yolo_bbox2segment_subfolders(tmp_path):
+    """Images with the same name in different subfolders must keep separate segment labels."""
+    from ultralytics.data.converter import yolo_bbox2segment
+
+    for sub, name in (("a", "bus.jpg"), ("b", "zidane.jpg")):
+        (tmp_path / "images" / sub).mkdir(parents=True)
+        (tmp_path / "labels" / sub).mkdir(parents=True)
+        shutil.copy(ASSETS / name, tmp_path / "images" / sub / "x.jpg")
+        (tmp_path / "labels" / sub / "x.txt").write_text(f"{'ab'.index(sub)} 0.5 0.5 0.2 0.2\n")
+    yolo_bbox2segment(tmp_path / "images", tmp_path / "out", sam_model=WEIGHTS_DIR / "mobile_sam.pt")
+    assert [(tmp_path / "out" / s / "x.txt").read_text()[0] for s in "ab"] == ["0", "1"]
+
+
 def test_data_annotator(tmp_path):
     """Test automatic annotation of data using detection and segmentation models."""
     from ultralytics.data.annotator import auto_annotate
